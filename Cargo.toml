@@ -1,0 +1,12 @@
+[package]
+name = "b64-rs"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/BeesBoxler/b64-rs"
+license-file = "LICENSE"
+authors = ["Bea Boxler"]
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
