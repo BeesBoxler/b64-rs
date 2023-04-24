@@ -21,33 +21,35 @@ const INDEX: [u8; 123] = [
 const CHUNK_SIZE: usize = 6;
 
 pub fn encode(value: &str) -> String {
-    let mut data = value
-        .bytes()
-        .map(|v| format!("{:0>8b}", v))
-        .collect::<String>();
-    let padding = (CHUNK_SIZE - (data.len() % CHUNK_SIZE)) % CHUNK_SIZE;
     let mut result = vec![];
+    let mut data = String::new();
+    let bytes = value.bytes();
 
-    data += &"0".repeat(padding);
+    for b in bytes { data.push_str(&format!("{:0>8b}", b))}
+
+    let padding = (CHUNK_SIZE - (data.len() % CHUNK_SIZE)) % CHUNK_SIZE;
+
+    for _ in 0..padding {data.push('0')};
 
     while !data.is_empty() {
         let i = usize::from_str_radix(data.drain(0..CHUNK_SIZE).as_str(), 2).unwrap();
-        result.push(char::from_u32(ALPHABET[i] as _).unwrap());
+        result.push(ALPHABET[i] as char);
     }
 
-    "=".repeat(padding / 2).chars().for_each(|c| result.push(c));
+    for _ in 0..padding/2 {result.push('=')};
 
     result.iter().collect::<String>()
 }
 
 pub fn decode(value: &str) -> String {
     let mut result = vec![];
-    let mut data: String = value
-        .replace('=', "")
-        .bytes()
-        .map(|c| format!("{:0>6b}", INDEX[c as usize] << 2 >> 2))
-        .collect::<String>();
-    
+    let mut data = String::new();
+    let bytes = value.bytes();
+
+    for b in bytes {
+        if b == 61 {continue}
+        data.push_str(&format!("{:0>6b}", INDEX[b as usize] << 2 >> 2));
+    }
 
     while data.len() > 7 {
         result.push(u8::from_str_radix(data.drain(0..8).as_str(), 2).unwrap());
