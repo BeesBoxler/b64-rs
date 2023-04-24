@@ -2,10 +2,10 @@ use std::fs::read_to_string;
 
 extern crate b64_rs;
 
-use b64_rs::{encode, decode};
+use b64_rs::{decode, encode};
 use std::time::Instant;
 
-const COUNT: u16 = 1000;
+const COUNT: f64 = 1000.0;
 
 fn main() {
     let text = load_text();
@@ -31,12 +31,12 @@ fn load_text() -> String {
 fn measure<F: Fn() -> ()>(func: F) {
     let now = Instant::now();
     {
-        for _ in 0..COUNT {
+        for _ in 0..COUNT as u16 {
             func();
         }
     }
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-    println!("Average: {:2?}ms", elapsed.as_millis() / COUNT as u128);
+    println!("Average: {:2?}ms", elapsed.as_millis() as f64 / COUNT);
 }
