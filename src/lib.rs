@@ -18,27 +18,43 @@ const INDEX: [u8; 123] = [
     0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33,
 ];
 
-const CHUNK_SIZE: usize = 6;
-
 pub fn encode(value: &str) -> String {
-    let mut result = vec![];
+    // let mut result = vec![];
     let mut data = String::new();
-    let bytes = value.bytes();
+    let mut bytes = value.bytes();
 
-    for b in bytes { data.push_str(&format!("{:0>8b}", b))}
+    let len = bytes.len() / 3;
+    let rem = bytes.len() % 3;
 
-    let padding = (CHUNK_SIZE - (data.len() % CHUNK_SIZE)) % CHUNK_SIZE;
+    for _ in 0..len {
+        let chunk: u32 = (bytes.next().unwrap() as u32) << 0x10 | (bytes.next().unwrap() as u32) << 0x08 | bytes.next().unwrap() as u32;
 
-    for _ in 0..padding {data.push('0')};
-
-    while !data.is_empty() {
-        let i = usize::from_str_radix(data.drain(0..CHUNK_SIZE).as_str(), 2).unwrap();
-        result.push(ALPHABET[i] as char);
+        data.push( ALPHABET[(chunk >> 0x12 as u8 & 0x3f) as usize] as char);
+        data.push( ALPHABET[(chunk >> 0x0c as u8 & 0x3f) as usize] as char);
+        data.push( ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
+        data.push( ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
     }
 
-    for _ in 0..padding/2 {result.push('=')};
+    if rem == 1 {
+        let chunk: u32 = (bytes.next().unwrap() as u32) << 0x04;
 
-    result.iter().collect::<String>()
+        data.push(ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
+        data.push('=');
+        data.push('=');
+
+
+    } else if rem == 2 {
+
+        let chunk = (bytes.next().unwrap() as u32) << 0x0a | (bytes.next().unwrap() as u32) << 0x02;
+        
+        data.push( ALPHABET[(chunk >> 0x0c as u8 & 0x3f) as usize] as char);
+        data.push( ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
+        data.push( ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
+        data.push('=');
+    }
+
+    data
 }
 
 pub fn decode(value: &str) -> String {
@@ -74,9 +90,9 @@ mod test {
 
     fn test_data() -> Vec<B64Pair> {
         vec![
-            B64Pair("🥺", "8J+lug=="),
             B64Pair("Test String", "VGVzdCBTdHJpbmc="),
             B64Pair("bea is cool", "YmVhIGlzIGNvb2w="),
+            B64Pair("🥺", "8J+lug=="),
             B64Pair("These sentences feel random but they're not, I promise. I am just making sure to test as many different silly things I can!", "VGhlc2Ugc2VudGVuY2VzIGZlZWwgcmFuZG9tIGJ1dCB0aGV5J3JlIG5vdCwgSSBwcm9taXNlLiBJIGFtIGp1c3QgbWFraW5nIHN1cmUgdG8gdGVzdCBhcyBtYW55IGRpZmZlcmVudCBzaWxseSB0aGluZ3MgSSBjYW4h"),
             B64Pair("おはいよう！私の名前はBea!元気ですか？", "44GK44Gv44GE44KI44GG77yB56eB44Gu5ZCN5YmN44GvQmVhIeWFg+awl+OBp+OBmeOBi++8nw=="),
             B64Pair("I need to test padding of each length, you see!!", "SSBuZWVkIHRvIHRlc3QgcGFkZGluZyBvZiBlYWNoIGxlbmd0aCwgeW91IHNlZSEh"),
