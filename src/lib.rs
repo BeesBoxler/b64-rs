@@ -61,7 +61,7 @@ pub fn decode(value: &str) -> String {
     let len = &value.len();
     let padding = if &value[len - 2..] == "==" {
         2
-    } else if &value[len -1..] == "=" {
+    } else if &value[len - 1..] == "=" {
         1
     } else {
         0
@@ -99,16 +99,8 @@ pub fn decode(value: &str) -> String {
 }
 
 #[cfg(test)]
-#[test]
-fn lookup_tables() {
-    for i in 0..ALPHABET.len() {
-        assert_eq!(INDEX[ALPHABET[i] as usize], i as u8);
-    }
-}
-
-#[cfg(test)]
 mod test {
-    use super::*;
+    use super::{decode, encode, ALPHABET, INDEX};
 
     struct B64Pair(pub &'static str, pub &'static str);
 
@@ -120,7 +112,7 @@ mod test {
             B64Pair("おはいよう！私の名前はBea!元気ですか？", "44GK44Gv44GE44KI44GG77yB56eB44Gu5ZCN5YmN44GvQmVhIeWFg+awl+OBp+OBmeOBi++8nw=="),
             B64Pair("These sentences feel random but they're not, I promise. I am just making sure to test as many different silly things I can!", "VGhlc2Ugc2VudGVuY2VzIGZlZWwgcmFuZG9tIGJ1dCB0aGV5J3JlIG5vdCwgSSBwcm9taXNlLiBJIGFtIGp1c3QgbWFraW5nIHN1cmUgdG8gdGVzdCBhcyBtYW55IGRpZmZlcmVudCBzaWxseSB0aGluZ3MgSSBjYW4h"),
             B64Pair("I need to test padding of each length, you see!!", "SSBuZWVkIHRvIHRlc3QgcGFkZGluZyBvZiBlYWNoIGxlbmd0aCwgeW91IHNlZSEh"),
-        ]
+            ]
     }
 
     #[test]
@@ -135,5 +127,12 @@ mod test {
         test_data()
             .iter()
             .for_each(|B64Pair(i, o)| assert_eq!(decode(o), *i));
+    }
+
+    #[test]
+    fn lookup_tables() {
+        for i in 0..ALPHABET.len() {
+            assert_eq!(INDEX[ALPHABET[i] as usize], i as u8);
+        }
     }
 }
