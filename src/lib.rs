@@ -19,7 +19,6 @@ const INDEX: [u8; 123] = [
 ];
 
 pub fn encode(value: &str) -> String {
-    // let mut result = vec![];
     let mut data = String::new();
     let mut bytes = value.bytes();
 
@@ -27,30 +26,29 @@ pub fn encode(value: &str) -> String {
     let rem = bytes.len() % 3;
 
     for _ in 0..len {
-        let chunk: u32 = (bytes.next().unwrap() as u32) << 0x10 | (bytes.next().unwrap() as u32) << 0x08 | bytes.next().unwrap() as u32;
+        let chunk: u32 = (bytes.next().unwrap() as u32) << 0x10
+            | (bytes.next().unwrap() as u32) << 0x08
+            | bytes.next().unwrap() as u32;
 
-        data.push( ALPHABET[(chunk >> 0x12 as u8 & 0x3f) as usize] as char);
-        data.push( ALPHABET[(chunk >> 0x0c as u8 & 0x3f) as usize] as char);
-        data.push( ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
-        data.push( ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x12 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
     }
 
     if rem == 1 {
         let chunk: u32 = (bytes.next().unwrap() as u32) << 0x04;
 
-        data.push(ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
         data.push('=');
         data.push('=');
-
-
     } else if rem == 2 {
-
         let chunk = (bytes.next().unwrap() as u32) << 0x0a | (bytes.next().unwrap() as u32) << 0x02;
-        
-        data.push( ALPHABET[(chunk >> 0x0c as u8 & 0x3f) as usize] as char);
-        data.push( ALPHABET[(chunk >> 0x06 as u8 & 0x3f) as usize] as char);
-        data.push( ALPHABET[(chunk as u8 & 0x3f) as usize] as char);
+
+        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
         data.push('=');
     }
 
@@ -58,20 +56,46 @@ pub fn encode(value: &str) -> String {
 }
 
 pub fn decode(value: &str) -> String {
-    let mut result = vec![];
-    let mut data = String::new();
-    let bytes = value.bytes();
+    let mut data = vec![];
 
-    for b in bytes {
-        if b == 61 {continue}
-        data.push_str(&format!("{:0>6b}", INDEX[b as usize] << 2 >> 2));
+    let len = &value.len();
+    let padding = if &value[len - 2..] == "==" {
+        2
+    } else if &value[len -1..] == "=" {
+        1
+    } else {
+        0
+    };
+
+    let mut bytes = value.bytes();
+    let len = (bytes.len() - padding) / 4;
+
+    for _ in 0..len {
+        let chunk: u32 = ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x12
+            | (INDEX[bytes.next().unwrap() as usize] as u32) << 0x0c
+            | ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x06
+            | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;
+
+        data.push((chunk >> 0x10) as u8 & 0xff);
+        data.push((chunk >> 0x08) as u8 & 0xff);
+        data.push(chunk as u8 & 0xff);
     }
 
-    while data.len() > 7 {
-        result.push(u8::from_str_radix(data.drain(0..8).as_str(), 2).unwrap());
+    if padding == 1 {
+        let chunk = ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x0c
+            | ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x06
+            | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;
+
+        data.push((chunk >> 0x0a) as u8);
+        data.push((chunk >> 0x02) as u8 & 0xff);
+    } else if padding == 2 {
+        let chunk = ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x06
+            | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;
+
+        data.push((chunk >> 0x04) as u8);
     }
 
-    String::from_utf8(result).unwrap()
+    String::from_utf8(data).unwrap()
 }
 
 #[cfg(test)]
@@ -84,7 +108,7 @@ fn lookup_tables() {
 
 #[cfg(test)]
 mod test {
-    use super::{decode, encode};
+    use super::*;
 
     struct B64Pair(pub &'static str, pub &'static str);
 
@@ -93,8 +117,8 @@ mod test {
             B64Pair("Test String", "VGVzdCBTdHJpbmc="),
             B64Pair("bea is cool", "YmVhIGlzIGNvb2w="),
             B64Pair("🥺", "8J+lug=="),
-            B64Pair("These sentences feel random but they're not, I promise. I am just making sure to test as many different silly things I can!", "VGhlc2Ugc2VudGVuY2VzIGZlZWwgcmFuZG9tIGJ1dCB0aGV5J3JlIG5vdCwgSSBwcm9taXNlLiBJIGFtIGp1c3QgbWFraW5nIHN1cmUgdG8gdGVzdCBhcyBtYW55IGRpZmZlcmVudCBzaWxseSB0aGluZ3MgSSBjYW4h"),
             B64Pair("おはいよう！私の名前はBea!元気ですか？", "44GK44Gv44GE44KI44GG77yB56eB44Gu5ZCN5YmN44GvQmVhIeWFg+awl+OBp+OBmeOBi++8nw=="),
+            B64Pair("These sentences feel random but they're not, I promise. I am just making sure to test as many different silly things I can!", "VGhlc2Ugc2VudGVuY2VzIGZlZWwgcmFuZG9tIGJ1dCB0aGV5J3JlIG5vdCwgSSBwcm9taXNlLiBJIGFtIGp1c3QgbWFraW5nIHN1cmUgdG8gdGVzdCBhcyBtYW55IGRpZmZlcmVudCBzaWxseSB0aGluZ3MgSSBjYW4h"),
             B64Pair("I need to test padding of each length, you see!!", "SSBuZWVkIHRvIHRlc3QgcGFkZGluZyBvZiBlYWNoIGxlbmd0aCwgeW91IHNlZSEh"),
         ]
     }
