@@ -1,5 +1,3 @@
-use ::std::str;
-
 const ALPHABET: [u8; 64] = [
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
     0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
@@ -76,9 +74,9 @@ pub fn decode(value: &str) -> String {
             | ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x06
             | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;
 
-        data.push((chunk >> 0x10) as u8 & 0xff);
-        data.push((chunk >> 0x08) as u8 & 0xff);
-        data.push(chunk as u8 & 0xff);
+        data.push((chunk >> 0x10) as u8);
+        data.push((chunk >> 0x08) as u8);
+        data.push(chunk as u8);
     }
 
     if padding == 1 {
@@ -87,7 +85,7 @@ pub fn decode(value: &str) -> String {
             | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;
 
         data.push((chunk >> 0x0a) as u8);
-        data.push((chunk >> 0x02) as u8 & 0xff);
+        data.push((chunk >> 0x02) as u8);
     } else if padding == 2 {
         let chunk = ((INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f) << 0x06
             | (INDEX[bytes.next().unwrap() as usize] as u32) & 0x3f;

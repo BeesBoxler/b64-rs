@@ -1,12 +1,11 @@
 [package]
 name = "b64-rs"
-version = "0.1.0"
+version = "1.0.2"
 edition = "2021"
 repository = "https://github.com/BeesBoxler/b64-rs"
-license-file = "LICENSE"
+license = "MIT"
+description = "A super speedy* base64 encoder"
+keywords = ["base64", "encode", "decode"]
 authors = ["Bea Boxler"]
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
