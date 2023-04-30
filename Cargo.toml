@@ -1,11 +1,12 @@
 [package]
 name = "b64-rs"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 repository = "https://github.com/BeesBoxler/b64-rs"
 license = "MIT"
 description = "A super speedy* base64 encoder"
 keywords = ["base64", "encode", "decode"]
-authors = ["Bea Boxler"]
+authors = ["Bea Boxler <bea@boxler.me>"]
+exclude = [".github/*", "examples/*"]
 
 [dependencies]
