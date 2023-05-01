@@ -17,7 +17,8 @@ const INDEX: [u8; 123] = [
 ];
 
 pub fn encode(value: &str) -> String {
-    let mut data = String::new();
+    let capacity = ((4 * value.len() / 3) + 3) & !3;
+    let mut data = Vec::with_capacity(capacity);
     let mut bytes = value.bytes();
 
     let len = bytes.len() / 3;
@@ -28,33 +29,33 @@ pub fn encode(value: &str) -> String {
             | (bytes.next().unwrap() as u32) << 0x08
             | bytes.next().unwrap() as u32;
 
-        data.push(ALPHABET[(chunk >> 0x12 & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
+        data.push(ALPHABET[(chunk >> 0x12 & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk & 0x3f) as usize]);
     }
 
     if rem == 1 {
         let chunk: u32 = (bytes.next().unwrap() as u32) << 0x04;
 
-        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
-        data.push('=');
-        data.push('=');
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk & 0x3f) as usize]);
+        data.push(0x3d);
+        data.push(0x3d);
     } else if rem == 2 {
         let chunk = (bytes.next().unwrap() as u32) << 0x0a | (bytes.next().unwrap() as u32) << 0x02;
 
-        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize] as char);
-        data.push(ALPHABET[(chunk & 0x3f) as usize] as char);
-        data.push('=');
+        data.push(ALPHABET[(chunk >> 0x0c & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk >> 0x06 & 0x3f) as usize]);
+        data.push(ALPHABET[(chunk & 0x3f) as usize]);
+        data.push(0x3d);
     }
 
-    data
+    String::from_utf8(data).unwrap()
 }
 
 pub fn decode(value: &str) -> String {
-    let mut data = vec![];
+    let mut data = Vec::with_capacity(value.len());
 
     let len = &value.len();
     let padding = if &value[len - 2..] == "==" {

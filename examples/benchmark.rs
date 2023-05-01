@@ -30,7 +30,7 @@ fn load_text() -> String {
     read_to_string(path).unwrap()
 }
 
-fn measure<F: Fn() -> ()>(count: usize, func: F) {
+fn measure<F: FnMut() -> ()>(count: usize, mut func: F) {
     let mut times = vec![];
     {
         for _ in 0..COUNT as u16 {
